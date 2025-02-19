@@ -1,0 +1,21 @@
+# 2️⃣ Очистка данных: убираем дубликаты по играм (агрегируем продажи)
+def clean_game_sales(data):
+    """
+    Объединяет данные по одной и той же игре, вышедшей на разных платформах.
+    Складывает продажи, оставляя уникальные записи.
+    """
+    clean_data = data.groupby(['Name', 'Year', 'Publisher'], as_index=False).agg({
+        'NA_Sales': 'sum',
+        'EU_Sales': 'sum',
+        'JP_Sales': 'sum',
+        'Other_Sales': 'sum',
+        'Global_Sales': 'sum',
+        'Genre': 'first',  # Берём жанр первой записи
+        'Platform': lambda x: ', '.join(set(x))  # Записываем все платформы в одну строку
+    })
+    return clean_data
+
+cleaned_data = clean_game_sales(data)
+
+# Сохраняем очищенные данные
+cleaned_data.to_csv("vgsale_cleaned.csv", index=False)

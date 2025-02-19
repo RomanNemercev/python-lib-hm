@@ -1,36 +1,62 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# 1️⃣ Загружаем данные
+# 1 Загружаем данные
 data = pd.read_csv("vgsale_1.csv")
 
-# 2️⃣ Очистка данных: убираем дубликаты по играм (агрегируем продажи)
-def clean_game_sales(data):
-    """
-    Объединяет данные по одной и той же игре, вышедшей на разных платформах.
-    Складывает продажи, оставляя уникальные записи.
-    """
-    clean_data = data.groupby(['Name', 'Year', 'Publisher'], as_index=False).agg({
-        'NA_Sales': 'sum',
-        'EU_Sales': 'sum',
-        'JP_Sales': 'sum',
-        'Other_Sales': 'sum',
-        'Global_Sales': 'sum',
-        'Genre': 'first',  # Берём жанр первой записи
-        'Platform': lambda x: ', '.join(set(x))  # Записываем все платформы в одну строку
-    })
-    return clean_data
-
-cleaned_data = clean_game_sales(data)
-
-# Сохраняем очищенные данные
-cleaned_data.to_csv("vgsale_cleaned.csv", index=False)
-
+# Форматирую данные столбца "Year" с float на int
 data["Year"] = data["Year"].fillna(0).astype(int)
 
-# 3️⃣ График: Количество видеоигр по годам (без дубликатов по Name)
+# Переменная без дубликатов
 games_per_year = data.drop_duplicates(subset=["Name"]).groupby("Year")["Name"].count()
 
+# (оценка проводится на основе объема продаж)
+data_before_2000 = data[data['Year'] <= 2000]
+data_after_2000 = data[data['Year'] > 2000]
+
+# группирую данные
+genre_sales_before_2000 = data_before_2000.groupby('Genre')['Global_Sales'].sum().sort_values(ascending=False)
+genre_sales_after_2000 = data_after_2000.groupby('Genre')['Global_Sales'].sum().sort_values(ascending=False)
+
+# создание графиков
+plt.figure(figsize=(14, 6))
+
+# график до 2000 года
+plt.subplot(1, 2, 1)
+genre_sales_before_2000.plot(kind='bar', color='skyblue')
+plt.title('Популярные жанры до 2000 года (по продажам)')
+plt.ylabel('Мировые продажи (млн)')
+plt.xlabel('Жанры')
+
+# график после 2000 года
+plt.subplot(1, 2, 2)
+genre_sales_after_2000.plot(kind='bar', color='salmon')
+plt.title('Популярные жанры после 2000 года (по продажам)')
+plt.ylabel('Мировые продажи (млн)')
+plt.xlabel('Жанры')
+
+plt.tithg_layout()
+plt.show()
+
+# 2 общее кол-во игр выпущенных по годам
+# Убираю дубликаты
+unique_games = data.drop_duplicates(subset=['Name'])
+
+# Группирую по жанрам и считаю кол-во игр
+genre_counts = unique_games['Genre'].value_counts()
+
+# Строю график
+plt.figure(figsize=(12, 6))
+genre_counts.plot(kind='bar', color='lightcoral')
+
+plt.title('Популярность жанров по количеству игр')
+plt.xlabel('Жанры')
+plt.ylabel('Кол-во игр')
+plt.xticks=(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+# 2 График: Количество видеоигр по годам (без дубликатов по Name)
 plt.figure(figsize=(12, 5))
 games_per_year.plot(kind="bar", color="lightblue")
 plt.title("Количество выпущенных видеоигр по годам")
@@ -40,7 +66,7 @@ plt.xticks(rotation=45)
 plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.show()
 
-# 4️⃣ Топ-3 издателя по количеству выпущенных игр
+# 3 Топ-3 издателя по количеству выпущенных игр
 top_publishers = data["Publisher"].value_counts().nlargest(3)  # Берём топ-3
 print("Топ-3 издателя:\n", top_publishers)
 
@@ -54,7 +80,7 @@ plt.xticks(rotation=0)
 plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.show()
 
-# 5️⃣ График: Количество игр топ-3 издателей по платформам
+# 4 График: Количество игр топ-3 издателей по платформам
 top_publisher_names = top_publishers.index
 top_publisher_data = data[data["Publisher"].isin(top_publisher_names)]
 
@@ -68,7 +94,7 @@ plt.legend(title="Платформа")
 plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.show()
 
-# 6️⃣ Круговые диаграммы долей продаж по регионам (1980-2000 и 2000-2020)
+# 5 Круговые диаграммы долей продаж по регионам (1980-2000 и 2000-2020)
 data_before_2000 = data[data['Year'] <= 2000]
 data_after_2000 = data[data['Year'] > 2000]
 
